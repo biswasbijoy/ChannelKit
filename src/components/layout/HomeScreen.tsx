@@ -1,6 +1,8 @@
-import { useCallback, useRef, useState, type DragEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { usePlaylistStore } from '../../features/playlist/playlistStore'
+import { useAuthStore } from '../../features/auth/authStore'
+import { getCountryFlagAndName, getFlagImageUrl } from '../../features/countries/iso3166'
 import { parseM3u } from '../../features/playlist/parseM3u'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024
@@ -23,12 +25,24 @@ export function HomeScreen() {
   const setLoading = usePlaylistStore((s) => s.setLoading)
   const setError = usePlaylistStore((s) => s.setError)
   const fileName = usePlaylistStore((s) => s.fileName)
+  const saveToServer = usePlaylistStore((s) => s.saveToServer)
+  const loadFromServer = usePlaylistStore((s) => s.loadFromServer)
+  const user = useAuthStore((s) => s.user)
+
+  const displayCountry = fileName ? getCountryFlagAndName(fileName) : null
 
   const [dragOver, setDragOver] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const uploadRef = useRef<HTMLDivElement>(null)
   const howRef = useRef<HTMLDivElement>(null)
+  const authRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (user) {
+      loadFromServer()
+    }
+  }, [user])
 
   const handleFile = useCallback(async (file: File) => {
     setLocalError(null)
@@ -47,6 +61,9 @@ export function HomeScreen() {
       const result = parseM3u(text, file.name)
       setPlaylist(result, file.name)
       if (result.channels.length > 0) {
+        if (localStorage.getItem('iptv-token')) {
+          await saveToServer()
+        }
         navigate('/channels')
       } else {
         setLocalError('No valid channels found in the playlist')
@@ -56,7 +73,7 @@ export function HomeScreen() {
     } finally {
       setLoading(false)
     }
-  }, [navigate, setPlaylist, setError, setLoading])
+  }, [navigate, setPlaylist, setError, setLoading, saveToServer])
 
   const onDrop = useCallback((e: DragEvent) => {
     e.preventDefault()
@@ -79,15 +96,14 @@ export function HomeScreen() {
     if (file) handleFile(file)
   }
 
-  const scrollToUpload = () => {
-    uploadRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-  const scrollToHow = () => {
-    howRef.current?.scrollIntoView({ behavior: 'smooth' })
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
   const displayError = localError || error
   const hasPlaylist = channels.length > 0
+  const showUpload = user && !hasPlaylist
+  const showAuthPrompt = !user && !hasPlaylist
 
   return (
     <div className="flex-1 flex flex-col">
@@ -107,15 +123,31 @@ export function HomeScreen() {
             with a sleek, responsive player.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <button
-              onClick={hasPlaylist ? () => navigate('/channels') : scrollToUpload}
-              className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-600/25"
-            >
-              {hasPlaylist ? 'Browse Channels' : 'Get Started'}
-            </button>
+            {hasPlaylist ? (
+              <button
+                onClick={() => navigate('/channels')}
+                className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-600/25"
+              >
+                Browse Channels
+              </button>
+            ) : user ? (
+              <button
+                onClick={() => scrollToSection(uploadRef)}
+                className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-600/25"
+              >
+                Upload Playlist
+              </button>
+            ) : (
+              <Link
+                to="/signup"
+                className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-600/25"
+              >
+                Get Started Free
+              </Link>
+            )}
             {!hasPlaylist && (
               <button
-                onClick={scrollToHow}
+                onClick={() => scrollToSection(howRef)}
                 className="px-8 py-3.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-lg transition-all hover:scale-105 border border-gray-700"
               >
                 How It Works
@@ -124,7 +156,7 @@ export function HomeScreen() {
           </div>
           {hasPlaylist && (
             <p className="mt-6 text-green-400 text-sm">
-              ✓ {channels.length} channels loaded{fileName ? ` from ${fileName}` : ''}
+              ✓ {channels.length} channels available
             </p>
           )}
         </div>
@@ -178,8 +210,35 @@ export function HomeScreen() {
         </div>
       </section>
 
-      {/* Upload Section */}
-      {!hasPlaylist && (
+      {/* Auth prompt for logged-out users */}
+      {showAuthPrompt && (
+        <section ref={authRef} className="bg-gray-950 border-t border-gray-800">
+          <div className="max-w-3xl mx-auto px-6 py-20 text-center">
+            <div className="text-5xl mb-5">🔒</div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">Sign in to Start Watching</h2>
+            <p className="text-gray-500 text-sm mb-3 max-w-lg mx-auto">
+              Create a free account to upload your playlist and stream live TV channels across all your devices. Your playlists and preferences are saved securely.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center mt-8">
+              <Link
+                to="/signup"
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-semibold transition-all hover:scale-105"
+              >
+                Create Free Account
+              </Link>
+              <Link
+                to="/login"
+                className="px-8 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition-all hover:scale-105 border border-gray-700"
+              >
+                I Already Have an Account
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Upload Section for logged-in users */}
+      {showUpload && (
         <section ref={uploadRef} className="bg-gray-950 border-t border-gray-800">
           <div className="max-w-3xl mx-auto px-6 py-20 text-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-3">Ready to Watch?</h2>
@@ -237,11 +296,21 @@ export function HomeScreen() {
       {hasPlaylist && (
         <section className="bg-gray-950 border-t border-gray-800">
           <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-            <div className="text-5xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold mb-2">Playlist Loaded</h2>
+            {displayCountry ? (
+              <div className="inline-flex items-center gap-4 bg-gradient-to-r from-indigo-950/70 via-gray-900/70 to-blue-950/70 px-6 py-4 rounded-2xl border border-indigo-500/15 shadow-lg shadow-blue-500/5 mb-5 animate-glow">
+                <img src={getFlagImageUrl(displayCountry.code, 48)} alt={displayCountry.name} className="w-12 h-9 rounded-sm object-cover shadow-md ring-1 ring-white/10" />
+                <div className="text-left">
+                  <p className="text-xs font-medium text-blue-400/80 uppercase tracking-widest leading-tight">Now Playing</p>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-300 via-white to-purple-300 bg-clip-text text-transparent leading-tight">
+                    {displayCountry.name}
+                  </h2>
+                </div>
+              </div>
+            ) : (
+              <h2 className="text-2xl font-bold mb-5">Playlist Loaded</h2>
+            )}
             <p className="text-gray-400 mb-3">
               {channels.length} channels ready to watch
-              {fileName ? <span className="text-gray-600"> from {fileName}</span> : ''}
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
               <button

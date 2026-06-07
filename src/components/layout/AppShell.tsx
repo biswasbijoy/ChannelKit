@@ -1,6 +1,7 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { usePlaylistStore } from '../../features/playlist/playlistStore'
+import { useAuthStore } from '../../features/auth/authStore'
 
 interface AppShellProps {
   children: ReactNode
@@ -9,13 +10,29 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const location = useLocation()
   const channels = usePlaylistStore((s) => s.channels)
+  const user = useAuthStore((s) => s.user)
+  const logout = useAuthStore((s) => s.logout)
+  const checkAuth = useAuthStore((s) => s.checkAuth)
+  const loadFromServer = usePlaylistStore((s) => s.loadFromServer)
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    if (user) {
+      loadFromServer()
+    }
+  }, [user, loadFromServer])
+
   const hasPlaylist = channels.length > 0
   const isWatchPage = location.pathname.startsWith('/watch/')
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup'
 
   const navLinks = [
     { to: '/', label: 'Home', show: true },
     { to: '/channels', label: 'Channels', show: hasPlaylist },
-    { to: '/guide', label: 'Guide', show: true },
+
     { to: '/settings', label: 'Settings', show: true },
   ]
 
@@ -26,9 +43,9 @@ export function AppShell({ children }: AppShellProps) {
           <Link to="/" className="text-xl font-bold text-blue-400">
             IPTV Player
           </Link>
-          <div className="flex gap-4">
+          <div className="flex items-center gap-4">
             {navLinks
-              .filter((l) => l.show)
+              .filter((l) => l.show && !isAuthPage)
               .map((link) => (
                 <Link
                   key={link.to}
@@ -42,6 +59,33 @@ export function AppShell({ children }: AppShellProps) {
                   {link.label}
                 </Link>
               ))}
+            {!isAuthPage && (
+              <div className="flex items-center gap-3 ml-2 pl-3 border-l border-gray-700">
+                {user ? (
+                  <>
+                    <span className="text-sm text-gray-400">{user.name}</span>
+                    <button
+                      onClick={logout}
+                      className="text-sm text-gray-500 hover:text-red-400 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" className="text-sm text-gray-300 hover:text-white transition-colors">
+                      Login
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className="px-3 py-1.5 rounded text-sm bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </nav>
       </header>

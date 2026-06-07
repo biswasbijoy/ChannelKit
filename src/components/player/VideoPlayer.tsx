@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { usePlaylistStore } from '../../features/playlist/playlistStore'
+import { useAuthStore } from '../../features/auth/authStore'
 import { useHlsPlayer } from '../../features/playback/useHlsPlayer'
 import { usePreferences } from '../../features/storage/preferences'
 import { PlayerControlsBar } from './PlayerControls'
@@ -14,6 +15,7 @@ export function StreamingScreen() {
   const videoRef = useRef<HTMLVideoElement>(null!)
   const channels = usePlaylistStore((s) => s.channels)
   const getChannelById = usePlaylistStore((s) => s.getChannelById)
+  const user = useAuthStore((s) => s.user)
 
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [statusCollapsed, setStatusCollapsed] = useState(true)
@@ -101,13 +103,39 @@ export function StreamingScreen() {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
-          <p className="text-gray-400 text-lg mb-4">No channels loaded</p>
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-          >
-            Upload a Playlist
-          </button>
+          {user ? (
+            <>
+              <p className="text-gray-400 text-lg mb-4">No channels loaded</p>
+              <button
+                onClick={() => navigate('/')}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Upload a Playlist
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="text-5xl mb-5">🔒</div>
+              <h2 className="text-xl font-bold mb-2">Sign in to Watch</h2>
+              <p className="text-gray-500 text-sm mb-6 max-w-md">
+                Create a free account to upload playlists and stream live TV.
+              </p>
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Link
+                  to="/signup"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors"
+                >
+                  Create Free Account
+                </Link>
+                <Link
+                  to="/login"
+                  className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-700"
+                >
+                  Sign In
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </div>
     )
@@ -222,6 +250,10 @@ export function StreamingScreen() {
               hasPrev={currentIndex > 0}
               hasNext={currentIndex < channels.length - 1}
               pipSupported={pipSupported}
+              onPlayPause={() => {
+                if (state === 'playing') controls?.pause()
+                else controls?.play()
+              }}
             />
 
             <PlayerStatus

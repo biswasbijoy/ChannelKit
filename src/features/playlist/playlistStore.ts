@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { api } from '../api/client'
+import { parseM3u } from './parseM3u'
 import type { Channel, ParseResult, PlaylistRecord } from './playlistTypes'
 
 interface PlaylistState {
@@ -17,6 +19,10 @@ interface PlaylistState {
   getGroups: () => string[]
   toRecord: () => PlaylistRecord | null
   loadRecord: (record: PlaylistRecord) => void
+
+  saveToServer: () => Promise<void>
+  loadFromServer: () => Promise<void>
+  loadDefaultPlaylist: () => Promise<void>
 }
 
 export const usePlaylistStore = create<PlaylistState>((set, get) => ({
@@ -83,5 +89,62 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
       error: null,
       isLoading: false,
     })
+  },
+
+  saveToServer: async () => {
+    const state = get()
+    if (state.channels.length === 0) return
+    try {
+      await api.post('/playlists', {
+        name: state.fileName ?? 'Imported Playlist',
+        channels: state.channels,
+        source: 'file',
+        fileName: state.fileName ?? undefined,
+      })
+    } catch (err) {
+      console.error('Failed to save playlist to server:', err)
+    }
+  },
+
+  loadFromServer: async () => {
+    const state = get()
+    if (state.channels.length > 0) return
+    try {
+      const listRes = await api.get('/playlists')
+      const playlists: Array<{ _id: string }> = listRes.data
+      if (playlists.length > 0) {
+        const first = playlists[0]
+        if (!first) return
+        const recentRes = await api.get(`/playlists/${first._id}`)
+        const data = recentRes.data
+        set({
+          channels: data.channels ?? [],
+          fileName: data.fileName ?? null,
+          error: null,
+        })
+        return
+      }
+      await get().loadDefaultPlaylist()
+    } catch (err) {
+      console.error('Failed to load playlist from server:', err)
+    }
+  },
+
+  loadDefaultPlaylist: async () => {
+    const state = get()
+    if (state.channels.length > 0) return
+    try {
+      const { data } = await api.get('/playlists/default')
+      const result = parseM3u(data.content, data.fileName ?? 'bd.m3u')
+      set({
+        channels: result.channels,
+        parseResult: result,
+        fileName: data.fileName ?? 'bd.m3u',
+        error: result.errors.length > 0 ? `Parsed with ${result.errors.length} error(s)` : null,
+        isLoading: false,
+      })
+    } catch (err) {
+      console.error('Failed to load default playlist:', err)
+    }
   },
 }))

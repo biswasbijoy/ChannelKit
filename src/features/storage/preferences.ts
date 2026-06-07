@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { api } from '../api/client'
 
 const STORAGE_KEY = 'iptv-player-preferences'
 
@@ -33,9 +34,30 @@ function savePreferences(prefs: Preferences) {
 
 export function usePreferences() {
   const [prefs, setPrefs] = useState<Preferences>(loadPreferences)
+  const syncTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     savePreferences(prefs)
+  }, [prefs])
+
+  useEffect(() => {
+    const token = localStorage.getItem('iptv-token')
+    if (!token) return
+    api.get('/settings').then(({ data }) => {
+      setPrefs({ volume: data.volume, muted: data.muted })
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem('iptv-token')
+    if (!token) return
+    if (syncTimeout.current) clearTimeout(syncTimeout.current)
+    syncTimeout.current = setTimeout(() => {
+      api.put('/settings', prefs).catch(() => {})
+    }, 1000)
+    return () => {
+      if (syncTimeout.current) clearTimeout(syncTimeout.current)
+    }
   }, [prefs])
 
   const setVolume = useCallback((volume: number) => {

@@ -13,6 +13,7 @@ interface PlayerControlsProps {
   hasPrev: boolean
   hasNext: boolean
   pipSupported: boolean
+  onPlayPause?: () => void
 }
 
 export function PlayerControlsBar({
@@ -28,18 +29,20 @@ export function PlayerControlsBar({
   hasPrev,
   hasNext,
   pipSupported,
+  onPlayPause,
 }: PlayerControlsProps) {
-  const statusIcon = {
-    idle: '⏹',
-    loading: '⏳',
-    playing: '▶',
-    paused: '⏸',
-    error: '⚠',
-  }[state]
+  const isPlayable = state === 'playing' || state === 'paused'
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 bg-gray-900/90 backdrop-blur">
-      <span className="text-sm" title={state}>{statusIcon}</span>
+      <button
+        onClick={onPlayPause}
+        disabled={!isPlayable}
+        className="p-1.5 hover:bg-gray-700 rounded transition-colors disabled:opacity-30 text-lg"
+        title={state === 'playing' ? 'Pause' : 'Play'}
+      >
+        {state === 'playing' ? '⏸' : '▶'}
+      </button>
 
       <div className="flex items-center gap-1">
         <button
