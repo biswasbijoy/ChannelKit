@@ -1,0 +1,21 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="ch1" tvg-name="Channel 1" group-title="General",Channel 1
+http://example.com/ch1.m3u8
+#EXTINF:-1 tvg-id="ch2" tvg-name="Channel 2" group-title="General",Channel 2
+http://example.com/ch2.m3u8
+#EXTINF:-1 tvg-id="ch3" tvg-name="Channel 3" group-title="Sports",Channel 3
+http://example.com/ch3.m3u8
+#EXTINF:-1 tvg-id="ch4" tvg-name="Channel 4" group-title="News",Channel 4
+http://example.com/ch4.m3u8
+#EXTINF:-1 tvg-id="ch5" tvg-name="Channel 5" group-title="Entertainment",Channel 5
+http://example.com/ch5.m3u8
+#EXTINF:-1 tvg-id="ch6" tvg-name="Channel 6" group-title="Movies",Channel 6
+http://example.com/ch6.m3u8
+#EXTINF:-1 tvg-id="ch7" tvg-name="Channel 7" group-title="Music",Channel 7
+http://example.com/ch7.m3u8
+#EXTINF:-1 tvg-id="ch8" tvg-name="Channel 8" group-title="Documentary",Channel 8
+http://example.com/ch8.m3u8
+#EXTINF:-1 tvg-id="ch9" tvg-name="Channel 9" group-title="Kids",Channel 9
+http://example.com/ch9.m3u8
+#EXTINF:-1 tvg-id="ch10" tvg-name="Channel 10" group-title="Sports",Channel 10
+http://example.com/ch10.m3u8
