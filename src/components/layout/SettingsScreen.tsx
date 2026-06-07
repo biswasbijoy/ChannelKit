@@ -1,13 +1,9 @@
 import { usePlaylistStore } from '../../features/playlist/playlistStore'
 import { usePreferences } from '../../features/storage/preferences'
-import { useEpgStore } from '../../features/epg/epgStore'
-import { EpgUploader } from '../upload/EpgUploader'
 
 export function SettingsScreen() {
   const clearPlaylist = usePlaylistStore((s) => s.clearPlaylist)
   const channels = usePlaylistStore((s) => s.channels)
-  const epgChannels = useEpgStore((s) => s.channels)
-  const clearEpgData = useEpgStore((s) => s.clearEpgData)
   const { volume, muted, setVolume, setMuted } = usePreferences()
 
   return (
@@ -56,21 +52,6 @@ export function SettingsScreen() {
               className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-sm transition-colors"
             >
               Clear Playlist
-            </button>
-          )}
-        </div>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-3">EPG / Program Guide</h2>
-        <div className="bg-gray-900 rounded-lg p-4 space-y-3">
-          <EpgUploader />
-          {epgChannels.length > 0 && (
-            <button
-              onClick={clearEpgData}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-sm transition-colors"
-            >
-              Clear EPG Data ({epgChannels.length} channels)
             </button>
           )}
         </div>
