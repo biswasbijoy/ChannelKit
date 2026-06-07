@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { usePlaylistStore } from '../../features/playlist/playlistStore'
 import { useAuthStore } from '../../features/auth/authStore'
+import { useDemoStore } from '../../features/demo/demoStore'
 import { useHlsPlayer } from '../../features/playback/useHlsPlayer'
 import { usePreferences } from '../../features/storage/preferences'
 import { PlayerControlsBar } from './PlayerControls'
@@ -14,7 +15,9 @@ export function StreamingScreen() {
   const navigate = useNavigate()
   const videoRef = useRef<HTMLVideoElement>(null!)
   const channels = usePlaylistStore((s) => s.channels)
+  const isLoading = usePlaylistStore((s) => s.isLoading)
   const getChannelById = usePlaylistStore((s) => s.getChannelById)
+  const demoChannel = useDemoStore((s) => s.channel)
   const user = useAuthStore((s) => s.user)
 
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -22,7 +25,9 @@ export function StreamingScreen() {
   const [search, setSearch] = useState('')
   const [pipSupported, setPipSupported] = useState(false)
 
-  const currentChannel = channelId ? getChannelById(channelId) : undefined
+  const currentChannel = channelId
+    ? channelId === 'demo' ? demoChannel : getChannelById(channelId)
+    : undefined
   const currentIndex = currentChannel ? channels.indexOf(currentChannel) : -1
 
   const { volume, muted, setVolume, setMuted } = usePreferences()
@@ -95,48 +100,139 @@ export function StreamingScreen() {
     } catch { /* ignore */ }
   }, [])
 
+  const sidebarChannels = channels.length > 0 ? channels : (demoChannel ? [demoChannel] : [])
   const filteredChannels = search.trim()
-    ? channels.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
-    : channels
+    ? sidebarChannels.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+    : sidebarChannels
 
-  if (channels.length === 0) {
+  if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
-          {user ? (
-            <>
-              <p className="text-gray-400 text-lg mb-4">No channels loaded</p>
-              <button
-                onClick={() => navigate('/')}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-              >
-                Upload a Playlist
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="text-5xl mb-5">🔒</div>
-              <h2 className="text-xl font-bold mb-2">Sign in to Watch</h2>
-              <p className="text-gray-500 text-sm mb-6 max-w-md">
-                Create a free account to upload playlists and stream live TV.
-              </p>
-              <div className="flex flex-wrap gap-3 justify-center">
-                <Link
-                  to="/signup"
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors"
-                >
-                  Create Free Account
-                </Link>
-                <Link
-                  to="/login"
-                  className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-700"
-                >
-                  Sign In
-                </Link>
-              </div>
-            </>
-          )}
+          <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-400 text-sm">Loading channels...</p>
         </div>
+      </div>
+    )
+  }
+
+  if (channels.length === 0) {
+    if (!user && demoChannel && channelId === 'demo') {
+      // fall through to player with demo channel
+    } else {
+      return (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center">
+            {user ? (
+              <>
+                <div className="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <p className="text-gray-400 text-lg mb-4">No channels loaded</p>
+                <button
+                  onClick={() => navigate('/')}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
+                >
+                  Upload a Playlist
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold mb-2">Sign in to Watch</h2>
+                <p className="text-gray-500 text-sm mb-6 max-w-md">
+                  Create a free account to upload playlists and stream live TV.
+                </p>
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <Link
+                    to="/signup"
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors"
+                  >
+                    Create Free Account
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-700"
+                  >
+                    Sign In
+                  </Link>
+                </div>
+                <Link
+                  to="/watch/demo"
+                  className="mt-4 inline-block text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Watch SomoyTV
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      )
+    }
+  }
+
+  if (channelId && !currentChannel) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+        {!user ? (
+          <>
+            <div className="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <p className="text-gray-400 text-lg font-semibold mb-2">Sign in to Watch</p>
+            <p className="text-gray-500 text-sm mb-6 max-w-sm">
+              Create a free account to browse and stream live TV channels.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Link
+                to="/signup"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors"
+              >
+                Create Free Account
+              </Link>
+              <Link
+                to="/login"
+                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-700"
+              >
+                Sign In
+              </Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <p className="text-gray-400 text-lg font-semibold mb-2">Channel not found</p>
+            <p className="text-gray-500 text-sm mb-6 max-w-sm">
+              This channel doesn't exist in your current playlist.
+            </p>
+            {channels.length > 0 && (
+              <button
+                onClick={() => navigate(`/watch/${channels[0]?.id ?? ''}`)}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
+              >
+                Watch First Channel
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/channels')}
+              className="mt-3 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Browse All Channels
+            </button>
+          </>
+        )}
       </div>
     )
   }

@@ -6,6 +6,7 @@ import proxyRoutes from './routes/proxyRoutes.js'
 import playlistRoutes from './routes/playlistRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import settingsRoutes from './routes/settingsRoutes.js'
+import publicRoutes from './routes/publicRoutes.js'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
@@ -18,6 +19,7 @@ app.use('/api', proxyRoutes)
 app.use('/api', playlistRoutes)
 app.use('/api', authRoutes)
 app.use('/api', settingsRoutes)
+app.use('/api', publicRoutes)
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() })

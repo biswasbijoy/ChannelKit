@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { usePlaylistStore } from '../../features/playlist/playlistStore'
 import { useAuthStore } from '../../features/auth/authStore'
-import { getCountryFlagAndName, getFlagImageUrl } from '../../features/countries/iso3166'
 import { parseM3u } from '../../features/playlist/parseM3u'
+import { CountryPicker } from '../countries/CountryPicker'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024
 
@@ -24,19 +24,14 @@ export function HomeScreen() {
   const error = usePlaylistStore((s) => s.error)
   const setLoading = usePlaylistStore((s) => s.setLoading)
   const setError = usePlaylistStore((s) => s.setError)
-  const fileName = usePlaylistStore((s) => s.fileName)
   const saveToServer = usePlaylistStore((s) => s.saveToServer)
   const loadFromServer = usePlaylistStore((s) => s.loadFromServer)
   const user = useAuthStore((s) => s.user)
-
-  const displayCountry = fileName ? getCountryFlagAndName(fileName) : null
 
   const [dragOver, setDragOver] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const uploadRef = useRef<HTMLDivElement>(null)
-  const howRef = useRef<HTMLDivElement>(null)
-  const authRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (user) {
@@ -96,10 +91,6 @@ export function HomeScreen() {
     if (file) handleFile(file)
   }
 
-  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
-    ref.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   const displayError = localError || error
   const hasPlaylist = channels.length > 0
   const showUpload = user && !hasPlaylist
@@ -110,82 +101,66 @@ export function HomeScreen() {
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-gray-950 via-blue-950 to-gray-950">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent" />
-        <div className="relative max-w-6xl mx-auto px-6 py-24 md:py-36 text-center">
-          <div className="text-6xl mb-6">📺</div>
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+        <div className="relative max-w-6xl mx-auto px-6 py-16 md:py-24 text-center">
+          <img src="/logo.png" alt="ChannelKit" className="h-16 w-16 mx-auto mb-4 drop-shadow-[0_0_12px_rgba(0,0,0,0.3)]" />
+          <h1 className="text-3xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             ChannelKit
           </h1>
-          <p className="text-lg md:text-xl text-gray-400 mb-3 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-gray-400 mb-6 max-w-2xl mx-auto">
             Your favorite live TV channels, organized and streamed in one place.
-          </p>
-          <p className="text-sm text-gray-600 mb-10 max-w-xl mx-auto">
-            Upload your M3U playlist and instantly browse, search, and watch thousands of channels
-            with a sleek, responsive player.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             {hasPlaylist ? (
-              <button
-                onClick={() => navigate('/channels')}
-                className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-600/25"
-              >
-                Browse Channels
-              </button>
+              <>
+                <button
+                  onClick={() => navigate('/channels')}
+                  className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-600/25"
+                >
+                  Browse Channels
+                </button>
+                <button
+                  onClick={() => navigate(`/watch/${channels[0]?.id}`)}
+                  className="px-8 py-3.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-lg transition-all hover:scale-105 border border-gray-700"
+                >
+                  Start Watching
+                </button>
+              </>
             ) : user ? (
               <button
-                onClick={() => scrollToSection(uploadRef)}
+                onClick={() => uploadRef.current?.scrollIntoView({ behavior: 'smooth' })}
                 className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-600/25"
               >
                 Upload Playlist
               </button>
             ) : (
-              <Link
-                to="/signup"
-                className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-600/25"
-              >
-                Get Started Free
-              </Link>
-            )}
-            {!hasPlaylist && (
-              <button
-                onClick={() => scrollToSection(howRef)}
-                className="px-8 py-3.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-lg transition-all hover:scale-105 border border-gray-700"
-              >
-                How It Works
-              </button>
+              <>
+                <Link
+                  to="/signup"
+                  className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-600/25"
+                >
+                  Get Started Free
+                </Link>
+                <Link
+                  to="/watch/demo"
+                  className="px-8 py-3.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-lg transition-all hover:scale-105 border border-gray-700"
+                >
+                  Watch SomoyTV
+                </Link>
+              </>
             )}
           </div>
+          {!user && (
+            <p className="text-sm text-gray-500 mt-6 max-w-lg mx-auto">
+              Sign up to watch many live TV channels and access all features. No credit card required.
+            </p>
+          )}
           {hasPlaylist && (
             <p className="mt-6 text-green-400 text-sm">
-              ✓ {channels.length} channels available
+              ✓ {channels.length} channels loaded
             </p>
           )}
         </div>
       </section>
-
-      {/* How It Works */}
-      {!hasPlaylist && (
-        <section ref={howRef} className="bg-gray-950 border-t border-gray-800">
-          <div className="max-w-5xl mx-auto px-6 py-20">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-14">
-              How It Works
-            </h2>
-            <div className="grid md:grid-cols-3 gap-10">
-              {[
-                { step: '01', title: 'Upload Your Playlist', desc: 'Drag & drop your .m3u or .m3u8 file, or pick it from your device. Files up to 50MB supported.', icon: '📤' },
-                { step: '02', title: 'Browse & Search', desc: 'All your channels are instantly organized. Search by name, filter by group, or sort to find what you want.', icon: '🔍' },
-                { step: '03', title: 'Watch & Enjoy', desc: 'Click any channel to start watching. Fullscreen, PiP, volume controls, and keyboard shortcuts included.', icon: '▶' },
-              ].map((item) => (
-                <div key={item.step} className="text-center">
-                  <div className="text-4xl mb-4">{item.icon}</div>
-                  <div className="text-xs font-mono text-blue-500 mb-2">{item.step}</div>
-                  <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Categories */}
       <section className="bg-gray-950/50 border-t border-gray-800">
@@ -212,14 +187,14 @@ export function HomeScreen() {
 
       {/* Auth prompt for logged-out users */}
       {showAuthPrompt && (
-        <section ref={authRef} className="bg-gray-950 border-t border-gray-800">
+        <section className="bg-gray-950 border-t border-gray-800">
           <div className="max-w-3xl mx-auto px-6 py-20 text-center">
             <div className="text-5xl mb-5">🔒</div>
             <h2 className="text-2xl md:text-3xl font-bold mb-3">Sign in to Start Watching</h2>
-            <p className="text-gray-500 text-sm mb-3 max-w-lg mx-auto">
-              Create a free account to upload your playlist and stream live TV channels across all your devices. Your playlists and preferences are saved securely.
+            <p className="text-gray-500 text-sm mb-8 max-w-lg mx-auto">
+              Create a free account to upload your playlist and stream live TV channels. Your playlists and preferences are saved securely.
             </p>
-            <div className="flex flex-wrap gap-3 justify-center mt-8">
+            <div className="flex flex-wrap gap-3 justify-center">
               <Link
                 to="/signup"
                 className="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-semibold transition-all hover:scale-105"
@@ -237,104 +212,64 @@ export function HomeScreen() {
         </section>
       )}
 
-      {/* Upload Section for logged-in users */}
+      {/* Country picker + Upload for logged-in users without a playlist */}
       {showUpload && (
-        <section ref={uploadRef} className="bg-gray-950 border-t border-gray-800">
-          <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-3">Ready to Watch?</h2>
-            <p className="text-gray-500 text-sm mb-10">
-              Drop your playlist below and start streaming in seconds.
-            </p>
-
-            <div
-              onDrop={onDrop}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onClick={onClick}
-              className={`border-2 border-dashed rounded-2xl p-14 text-center cursor-pointer transition-all ${
-                dragOver
-                  ? 'border-blue-400 bg-blue-900/20 scale-[1.02]'
-                  : 'border-gray-700 hover:border-gray-500 bg-gray-900/40 hover:bg-gray-900/60'
-              }`}
-            >
-              <div className="text-5xl mb-5">📁</div>
-              <p className="text-xl mb-2 font-medium">
-                {dragOver ? 'Drop your file here' : 'Drag & drop your playlist'}
+        <>
+          <CountryPicker />
+          <section ref={uploadRef} className="bg-gray-950 border-t border-gray-800">
+            <div className="max-w-3xl mx-auto px-6 py-20 text-center">
+              <h2 className="text-2xl md:text-3xl font-bold mb-3">Or Upload Your Own</h2>
+              <p className="text-gray-500 text-sm mb-10">
+                Drop your .m3u playlist below and start streaming in seconds.
               </p>
-              <p className="text-sm text-gray-500 mb-4">or click to browse files</p>
-              <p className="text-xs text-gray-600">
-                Supports <span className="font-mono text-gray-500">.m3u</span> and{' '}
-                <span className="font-mono text-gray-500">.m3u8</span> &middot; up to 50MB
-              </p>
-            </div>
-
-            <input
-              ref={inputRef}
-              type="file"
-              accept=".m3u,.m3u8"
-              onChange={onChange}
-              className="hidden"
-            />
-
-            {isLoading && (
-              <div className="mt-8 text-blue-400 animate-pulse flex items-center justify-center gap-2">
-                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                Parsing playlist...
+              <div
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onClick={onClick}
+                className={`border-2 border-dashed rounded-2xl p-14 text-center cursor-pointer transition-all ${
+                  dragOver
+                    ? 'border-blue-400 bg-blue-900/20 scale-[1.02]'
+                    : 'border-gray-700 hover:border-gray-500 bg-gray-900/40 hover:bg-gray-900/60'
+                }`}
+              >
+                <div className="text-5xl mb-5">📁</div>
+                <p className="text-xl mb-2 font-medium">
+                  {dragOver ? 'Drop your file here' : 'Drag & drop your playlist'}
+                </p>
+                <p className="text-sm text-gray-500 mb-4">or click to browse files</p>
+                <p className="text-xs text-gray-600">
+                  Supports <span className="font-mono text-gray-500">.m3u</span> and{' '}
+                  <span className="font-mono text-gray-500">.m3u8</span> &middot; up to 50MB
+                </p>
               </div>
-            )}
-
-            {displayError && (
-              <div className="mt-8 bg-red-900/40 border border-red-800 rounded-xl p-4 max-w-md mx-auto">
-                <p className="text-red-300 text-sm">{displayError}</p>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Loaded state */}
-      {hasPlaylist && (
-        <section className="bg-gray-950 border-t border-gray-800">
-          <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-            {displayCountry ? (
-              <div className="inline-flex items-center gap-4 bg-gradient-to-r from-indigo-950/70 via-gray-900/70 to-blue-950/70 px-6 py-4 rounded-2xl border border-indigo-500/15 shadow-lg shadow-blue-500/5 mb-5 animate-glow">
-                <img src={getFlagImageUrl(displayCountry.code, 48)} alt={displayCountry.name} className="w-12 h-9 rounded-sm object-cover shadow-md ring-1 ring-white/10" />
-                <div className="text-left">
-                  <p className="text-xs font-medium text-blue-400/80 uppercase tracking-widest leading-tight">Now Playing</p>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-300 via-white to-purple-300 bg-clip-text text-transparent leading-tight">
-                    {displayCountry.name}
-                  </h2>
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".m3u,.m3u8"
+                onChange={onChange}
+                className="hidden"
+              />
+              {isLoading && (
+                <div className="mt-8 text-blue-400 animate-pulse flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  Parsing playlist...
                 </div>
-              </div>
-            ) : (
-              <h2 className="text-2xl font-bold mb-5">Playlist Loaded</h2>
-            )}
-            <p className="text-gray-400 mb-3">
-              {channels.length} channels ready to watch
-            </p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <button
-                onClick={() => navigate('/channels')}
-                className="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-semibold transition-all hover:scale-105"
-              >
-                Browse Channels
-              </button>
-              <button
-                onClick={() => navigate(`/watch/${channels[0]?.id}`)}
-                className="px-8 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition-all hover:scale-105 border border-gray-700"
-              >
-                Start Watching
-              </button>
+              )}
+              {displayError && (
+                <div className="mt-8 bg-red-900/40 border border-red-800 rounded-xl p-4 max-w-md mx-auto">
+                  <p className="text-red-300 text-sm">{displayError}</p>
+                </div>
+              )}
             </div>
-          </div>
-        </section>
+          </section>
+        </>
       )}
 
       {/* Footer */}
       <footer className="border-t border-gray-800 bg-gray-950">
         <div className="max-w-5xl mx-auto px-6 py-8 text-center text-xs text-gray-600">
-          <p className="mb-1">ChannelKit &mdash; IPTV streaming app</p>
-          <p>Users are responsible for the content they access.</p>
+          <img src="/logo.png" alt="" className="h-4 w-4 inline-block align-middle -mt-0.5" /> ChannelKit &mdash; IPTV streaming app
         </div>
       </footer>
     </div>

@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { readFileSync } from 'fs'
-import { resolve, dirname } from 'path'
+import { readFileSync, readdirSync } from 'fs'
+import { resolve, dirname, extname } from 'path'
 import { fileURLToPath } from 'url'
 import { rateLimit } from '../middleware/rateLimit.js'
 import { validateProxyUrl } from '../middleware/validateUrl.js'
@@ -9,7 +9,7 @@ import { Playlist } from '../models/Playlist.js'
 import { fetchRemotePlaylist } from '../services/playlistService.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const DEFAULT_PLAYLIST_PATH = resolve(__dirname, '../../data/bd.m3u')
+const DATA_DIR = resolve(__dirname, '../../data')
 
 const router = Router()
 
@@ -25,13 +25,34 @@ router.post('/playlist/fetch', rateLimit(), validateProxyUrl, async (req, res) =
   }
 })
 
-router.get('/playlists/default', authenticate, async (_req, res) => {
+router.get('/playlists/defaults', authenticate, async (_req, res) => {
   try {
-    const content = readFileSync(DEFAULT_PLAYLIST_PATH, 'utf-8')
-    res.json({ content, fileName: 'bd.m3u' })
+    const files = readdirSync(DATA_DIR).filter((f) => /^[a-zA-Z]{2}\.m3u8?$/.test(f))
+    const list = files.map((f) => {
+      const code = f.replace(/\.m3u8?$/, '').toLowerCase()
+      return { code, file: f }
+    })
+    res.json(list)
   } catch (err) {
-    console.error('Read default playlist error:', err)
-    res.status(500).json({ error: 'Failed to load default playlist' })
+    console.error('List default playlists error:', err)
+    res.status(500).json({ error: 'Failed to list default playlists' })
+  }
+})
+
+router.get('/playlists/default/:code', authenticate, async (req, res) => {
+  const code = (req.params.code as string)?.toLowerCase()
+  if (!code || !/^[a-z]{2}$/.test(code)) {
+    res.status(400).json({ error: 'Invalid country code' })
+    return
+  }
+  try {
+    const fileName = `${code}.m3u`
+    const filePath = resolve(DATA_DIR, fileName)
+    const content = readFileSync(filePath, 'utf-8')
+    res.json({ content, fileName })
+  } catch (err) {
+    console.error(`Read default playlist ${code} error:`, err)
+    res.status(404).json({ error: `No default playlist found for "${code}"` })
   }
 })
 
