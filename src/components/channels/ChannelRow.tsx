@@ -8,7 +8,8 @@ interface ChannelRowProps {
 
 export function ChannelRow({ channel }: ChannelRowProps) {
   const navigate = useNavigate()
-  const { isFavorite, toggleFavorite } = useFavoritesStore()
+  const isFavorite = useFavoritesStore((s) => s.isFavorite)
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite)
 
   const fav = isFavorite(channel.id)
 

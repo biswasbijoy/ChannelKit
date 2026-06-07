@@ -1,19 +1,19 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useVirtualizer } from '@tanstack/react-virtual'
 import { usePlaylistStore } from '../../features/playlist/playlistStore'
 import { useFavoritesStore } from '../../features/favorites/favoritesStore'
 import { ChannelRow } from './ChannelRow'
 import { ChannelSearch } from './ChannelSearch'
 import { ChannelFilters } from './ChannelFilters'
 
-const ROW_HEIGHT = 56
-
 export function ChannelBrowser() {
   const navigate = useNavigate()
   const channels = usePlaylistStore((s) => s.channels)
   const fileName = usePlaylistStore((s) => s.fileName)
-  const groups = usePlaylistStore((s) => s.getGroups())
+  const groups = useMemo(() => {
+    const g = new Set(channels.map((c) => c.group))
+    return Array.from(g).sort()
+  }, [channels])
 
   const [search, setSearch] = useState('')
   const [selectedGroup, setSelectedGroup] = useState('')
@@ -24,15 +24,8 @@ export function ChannelBrowser() {
 
   const filteredChannels = useMemo(() => {
     let list = channels
-
-    if (showFavoritesOnly) {
-      list = list.filter((c) => favoritesSet.has(c.id))
-    }
-
-    if (selectedGroup) {
-      list = list.filter((c) => c.group === selectedGroup)
-    }
-
+    if (showFavoritesOnly) list = list.filter((c) => favoritesSet.has(c.id))
+    if (selectedGroup) list = list.filter((c) => c.group === selectedGroup)
     if (search.trim()) {
       const q = search.toLowerCase().trim()
       list = list.filter(
@@ -42,7 +35,6 @@ export function ChannelBrowser() {
           c.tvgName.toLowerCase().includes(q),
       )
     }
-
     const sorted = [...list]
     switch (sortBy) {
       case 'alpha':
@@ -51,26 +43,9 @@ export function ChannelBrowser() {
       case 'group':
         sorted.sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name))
         break
-      case 'original':
-        break
     }
-
     return sorted
   }, [channels, search, selectedGroup, sortBy, showFavoritesOnly, favoritesSet])
-
-  const parentRef = {
-    current: null as HTMLDivElement | null,
-  }
-  const setParentRef = (el: HTMLDivElement | null) => {
-    parentRef.current = el
-  }
-
-  const virtualizer = useVirtualizer({
-    count: filteredChannels.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: 10,
-  })
 
   if (channels.length === 0) {
     return (
@@ -87,7 +62,7 @@ export function ChannelBrowser() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
+    <div className="flex-1 flex flex-col h-full">
       <div className="p-4 border-b border-gray-800 space-y-3">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">
@@ -108,35 +83,10 @@ export function ChannelBrowser() {
           onFavoritesToggle={() => setShowFavoritesOnly((p) => !p)}
         />
       </div>
-
-      <div ref={setParentRef} className="flex-1 overflow-y-auto">
-        <div
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: '100%',
-            position: 'relative',
-          }}
-        >
-          {virtualizer.getVirtualItems().map((virtualItem) => {
-            const channel = filteredChannels[virtualItem.index]
-            if (!channel) return null
-            return (
-              <div
-                key={channel.id}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${virtualItem.size}px`,
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
-              >
-                <ChannelRow channel={channel} />
-              </div>
-            )
-          })}
-        </div>
+      <div className="flex-1 overflow-y-auto">
+        {filteredChannels.map((ch) => (
+          <ChannelRow key={ch.id} channel={ch} />
+        ))}
       </div>
     </div>
   )
