@@ -1,10 +1,11 @@
 import { create } from 'zustand'
 import { api } from '../api/client'
 
-interface User {
+export interface User {
   id: string
   email: string
   name: string
+  avatar: string | null
 }
 
 interface AuthState {
@@ -18,6 +19,7 @@ interface AuthState {
   logout: () => void
   checkAuth: () => Promise<void>
   clearError: () => void
+  setUser: (user: User) => void
 }
 
 function loadFromStorage(): { user: User | null; token: string | null } {
@@ -93,7 +95,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     try {
       const { data } = await api.get('/auth/me')
-      const user = { id: data.id, email: data.email, name: data.name }
+      const user: User = { id: data.id, email: data.email, name: data.name, avatar: data.avatar ?? null }
       saveToStorage(token, user)
       set({ user, token })
     } catch {
@@ -103,4 +105,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  setUser: (user: User) => {
+    const token = localStorage.getItem('iptv-token')
+    saveToStorage(token, user)
+    set({ user })
+  },
 }))

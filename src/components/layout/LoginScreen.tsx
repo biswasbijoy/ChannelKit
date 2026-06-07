@@ -71,6 +71,11 @@ export function LoginScreen() {
           Don't have an account?{' '}
           <Link to="/signup" className="text-blue-400 hover:text-blue-300">Sign Up</Link>
         </p>
+        <div className="mt-6 pt-6 border-t border-gray-800 text-center">
+          <Link to="/watch/demo" className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
+            Watch SomoyTV Instead
+          </Link>
+        </div>
       </div>
     </div>
   )

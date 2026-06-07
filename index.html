@@ -4,7 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IPTV Player</title>
+    <title>Explore the world of Free TV</title>
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('iptv-theme') || 'system';
+          var isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body class="bg-gray-950 text-white">
     <div id="root"></div>

@@ -3,12 +3,19 @@ import { api } from '../api/client'
 import { parseM3u } from './parseM3u'
 import type { Channel, ParseResult, PlaylistRecord } from './playlistTypes'
 
+interface DefaultEntry {
+  code: string
+  file: string
+}
+
 interface PlaylistState {
   channels: Channel[]
   parseResult: ParseResult | null
   fileName: string | null
   isLoading: boolean
+  hasLoaded: boolean
   error: string | null
+  availableDefaults: DefaultEntry[]
 
   setPlaylist: (result: ParseResult, fileName: string) => void
   clearPlaylist: () => void
@@ -22,7 +29,8 @@ interface PlaylistState {
 
   saveToServer: () => Promise<void>
   loadFromServer: () => Promise<void>
-  loadDefaultPlaylist: () => Promise<void>
+  loadDefaultsList: () => Promise<void>
+  loadDefaultPlaylistByCode: (code: string) => Promise<void>
 }
 
 export const usePlaylistStore = create<PlaylistState>((set, get) => ({
@@ -30,7 +38,9 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
   parseResult: null,
   fileName: null,
   isLoading: false,
+  hasLoaded: false,
   error: null,
+  availableDefaults: [],
 
   setPlaylist: (result, fileName) => {
     set({
@@ -41,6 +51,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
         ? `Parsed with ${result.errors.length} error(s)`
         : null,
       isLoading: false,
+      hasLoaded: true,
     })
   },
 
@@ -50,6 +61,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
       parseResult: null,
       fileName: null,
       error: null,
+      hasLoaded: false,
     })
   },
 
@@ -88,6 +100,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
       fileName: record.fileName ?? null,
       error: null,
       isLoading: false,
+      hasLoaded: true,
     })
   },
 
@@ -107,8 +120,13 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
   },
 
   loadFromServer: async () => {
+    set({ isLoading: true, error: null })
+    await get().loadDefaultsList()
     const state = get()
-    if (state.channels.length > 0) return
+    if (state.channels.length > 0) {
+      set({ isLoading: false, hasLoaded: true })
+      return
+    }
     try {
       const listRes = await api.get('/playlists')
       const playlists: Array<{ _id: string }> = listRes.data
@@ -121,30 +139,43 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
           channels: data.channels ?? [],
           fileName: data.fileName ?? null,
           error: null,
+          isLoading: false,
+          hasLoaded: true,
         })
-        return
+      } else {
+        set({ isLoading: false, hasLoaded: true })
       }
-      await get().loadDefaultPlaylist()
     } catch (err) {
       console.error('Failed to load playlist from server:', err)
+      set({ error: 'Failed to load playlist', isLoading: false, hasLoaded: true })
     }
   },
 
-  loadDefaultPlaylist: async () => {
-    const state = get()
-    if (state.channels.length > 0) return
+  loadDefaultsList: async () => {
     try {
-      const { data } = await api.get('/playlists/default')
-      const result = parseM3u(data.content, data.fileName ?? 'bd.m3u')
+      const { data } = await api.get('/playlists/defaults')
+      set({ availableDefaults: data as DefaultEntry[] })
+    } catch (err) {
+      console.error('Failed to load defaults list:', err)
+    }
+  },
+
+  loadDefaultPlaylistByCode: async (code: string) => {
+    set({ isLoading: true, error: null })
+    try {
+      const { data } = await api.get(`/playlists/default/${code}`)
+      const result = parseM3u(data.content, data.fileName ?? `${code}.m3u`)
       set({
         channels: result.channels,
         parseResult: result,
-        fileName: data.fileName ?? 'bd.m3u',
+        fileName: data.fileName ?? `${code}.m3u`,
         error: result.errors.length > 0 ? `Parsed with ${result.errors.length} error(s)` : null,
         isLoading: false,
+        hasLoaded: true,
       })
     } catch (err) {
-      console.error('Failed to load default playlist:', err)
+      console.error(`Failed to load default playlist "${code}":`, err)
+      set({ error: `Failed to load playlist for "${code}"`, isLoading: false, hasLoaded: true })
     }
   },
 }))

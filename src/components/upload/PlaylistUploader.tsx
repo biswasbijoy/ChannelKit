@@ -105,7 +105,10 @@ export function PlaylistUploader() {
         </div>
       ) : (
         <>
-          <h1 className="text-3xl font-bold mb-2">IPTV Player</h1>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <img src="/logo.png" alt="" className="h-10 w-10" />
+            <h1 className="text-3xl font-bold">ChannelKit</h1>
+          </div>
           <p className="text-gray-400 mb-8">Upload an M3U playlist to get started</p>
 
           <div
