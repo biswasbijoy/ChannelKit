@@ -1,0 +1,9 @@
+#EXTM3U
+#EXTINF:-1,HLS Stream
+http://example.com/stream.m3u8
+#EXTINF:-1,MP4 Direct
+http://example.com/video.mp4
+#EXTINF:-1,Direct WebM
+http://example.com/video.webm
+#EXTINF:-1,Non-standard URL
+http://example.com/playlist.php?type=m3u

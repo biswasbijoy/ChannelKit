@@ -1,0 +1,9 @@
+#EXTM3U
+#EXTINF:-1,Good Channel
+http://example.com/good.m3u8
+#EXTINF:broken,Missing Comma
+http://example.com/broken1.m3u8
+#EXTINF:-1,
+http://example.com/no-name.m3u8
+Invalid line without URL
+http://example.com/valid.m3u8
