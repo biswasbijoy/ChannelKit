@@ -4,6 +4,7 @@ import { usePlaylistStore } from '../../features/playlist/playlistStore'
 import { useAuthStore } from '../../features/auth/authStore'
 import { useDemoStore } from '../../features/demo/demoStore'
 import { useHlsPlayer } from '../../features/playback/useHlsPlayer'
+import { getProxyUrl } from '../../features/playback/useProxyUrl'
 import { usePreferences } from '../../features/storage/preferences'
 import { PlayerControlsBar } from './PlayerControls'
 import { PlayerStatus } from './PlayerStatus'
@@ -34,7 +35,7 @@ export function StreamingScreen() {
 
   const { state, mode, error, controls, retry } = useHlsPlayer(
     videoRef as React.RefObject<HTMLVideoElement | null>,
-    currentChannel?.url ?? null,
+    currentChannel?.url ? getProxyUrl(currentChannel.url) : null,
     { retryCount: 3 },
   )
 
