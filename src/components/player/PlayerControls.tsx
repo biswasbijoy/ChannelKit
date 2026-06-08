@@ -73,7 +73,7 @@ export function PlayerControlsBar({
         <button
           onClick={onPrevChannel}
           disabled={!hasPrev}
-          className="p-1.5 hover:bg-gray-700 rounded transition-colors disabled:opacity-30 text-sm"
+          className="hidden md:inline-flex p-1.5 hover:bg-gray-700 rounded transition-colors disabled:opacity-30 text-sm"
           title="Previous channel"
         >
           ⏮
@@ -83,7 +83,7 @@ export function PlayerControlsBar({
         <button
           onClick={onNextChannel}
           disabled={!hasNext}
-          className="p-1.5 hover:bg-gray-700 rounded transition-colors disabled:opacity-30 text-sm"
+          className="hidden md:inline-flex p-1.5 hover:bg-gray-700 rounded transition-colors disabled:opacity-30 text-sm"
           title="Next channel"
         >
           ⏭
@@ -93,7 +93,7 @@ export function PlayerControlsBar({
       {pipSupported && (
         <button
           onClick={onPiP}
-          className="p-1.5 hover:bg-gray-700 rounded transition-colors text-sm"
+          className="hidden md:inline-flex p-1.5 hover:bg-gray-700 rounded transition-colors text-sm"
           title="Picture-in-Picture"
         >
           🖼
