@@ -219,7 +219,7 @@ export function SettingsScreen() {
       <section>
         <h2 className="text-lg font-semibold mb-3">Theme</h2>
         <div className="bg-gray-900 rounded-lg p-4">
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {themeOptions.map((opt) => (
               <button
                 key={opt.value}

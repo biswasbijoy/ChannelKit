@@ -116,7 +116,7 @@ export function PlaylistUploader() {
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onClick={onClick}
-            className={`w-full max-w-lg border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
+            className={`w-full max-w-lg border-2 border-dashed rounded-xl p-8 sm:p-12 text-center cursor-pointer transition-colors ${
               dragOver
                 ? 'border-blue-400 bg-blue-900/20'
                 : 'border-gray-600 hover:border-gray-500 bg-gray-900/50'

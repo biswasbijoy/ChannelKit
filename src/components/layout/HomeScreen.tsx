@@ -164,7 +164,7 @@ export function HomeScreen() {
 
       {/* Categories */}
       <section className="bg-gray-950/50 border-t border-gray-800">
-        <div className="max-w-5xl mx-auto px-6 py-20">
+        <div className="max-w-5xl mx-auto px-6 py-12 md:py-20">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-3">
             Explore Categories
           </h2>
@@ -188,7 +188,7 @@ export function HomeScreen() {
       {/* Auth prompt for logged-out users */}
       {showAuthPrompt && (
         <section className="bg-gray-950 border-t border-gray-800">
-          <div className="max-w-3xl mx-auto px-6 py-20 text-center">
+          <div className="max-w-3xl mx-auto px-6 py-12 md:py-20 text-center">
             <div className="text-5xl mb-5">🔒</div>
             <h2 className="text-2xl md:text-3xl font-bold mb-3">Sign in to Start Watching</h2>
             <p className="text-gray-500 text-sm mb-8 max-w-lg mx-auto">
@@ -217,9 +217,9 @@ export function HomeScreen() {
         <>
           <CountryPicker />
           <section ref={uploadRef} className="bg-gray-950 border-t border-gray-800">
-            <div className="max-w-3xl mx-auto px-6 py-20 text-center">
+            <div className="max-w-3xl mx-auto px-6 py-12 md:py-20 text-center">
               <h2 className="text-2xl md:text-3xl font-bold mb-3">Or Upload Your Own</h2>
-              <p className="text-gray-500 text-sm mb-10">
+              <p className="text-gray-500 text-sm mb-8 sm:mb-10">
                 Drop your .m3u playlist below and start streaming in seconds.
               </p>
               <div
@@ -227,7 +227,7 @@ export function HomeScreen() {
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onClick={onClick}
-                className={`border-2 border-dashed rounded-2xl p-14 text-center cursor-pointer transition-all ${
+                className={`border-2 border-dashed rounded-2xl p-8 sm:p-14 text-center cursor-pointer transition-all ${
                   dragOver
                     ? 'border-blue-400 bg-blue-900/20 scale-[1.02]'
                     : 'border-gray-700 hover:border-gray-500 bg-gray-900/40 hover:bg-gray-900/60'

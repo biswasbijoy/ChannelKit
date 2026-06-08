@@ -240,14 +240,30 @@ export function StreamingScreen() {
 
   return (
     <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-      {/* Left panel: channel list */}
+      {/* Mobile overlay backdrop */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Left panel: channel list - slide-in overlay on mobile, static on desktop */}
       <div
         className={`${
-          sidebarOpen ? 'flex' : 'hidden'
-        } lg:flex w-full lg:w-80 xl:w-96 flex-col bg-gray-950 border-r border-gray-800 min-h-0`}
+          sidebarOpen
+            ? 'fixed inset-y-0 left-0 z-40 flex w-72 lg:relative lg:inset-auto lg:z-auto'
+            : 'hidden'
+        } lg:flex lg:w-80 xl:w-96 flex-col bg-gray-950 border-r border-gray-800 min-h-0`}
       >
-        <div className="p-3 border-b border-gray-800 shrink-0">
+        <div className="flex items-center justify-between p-3 border-b border-gray-800 shrink-0">
+          <span className="text-sm font-semibold text-gray-400 lg:hidden">Channels</span>
           <ChannelSearch value={search} onChange={setSearch} />
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto min-h-0">
           {filteredChannels.map((ch) => (
@@ -379,9 +395,11 @@ export function StreamingScreen() {
       {/* Mobile sidebar toggle */}
       <button
         onClick={() => setSidebarOpen((p) => !p)}
-        className="lg:hidden fixed bottom-4 right-4 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg z-50"
+        className="lg:hidden fixed bottom-20 right-4 w-12 h-12 bg-blue-600 hover:bg-blue-500 rounded-full flex items-center justify-center shadow-lg z-50 transition-colors"
       >
-        {sidebarOpen ? '✕' : '☰'}
+        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
       </button>
     </div>
   )
