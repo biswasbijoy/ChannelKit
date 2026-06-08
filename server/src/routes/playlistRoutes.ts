@@ -27,7 +27,7 @@ router.post('/playlist/fetch', rateLimit(), validateProxyUrl, async (req, res) =
 
 router.get('/playlists/defaults', authenticate, async (_req, res) => {
   try {
-    const files = readdirSync(DATA_DIR).filter((f) => /\.m3u8?$/i.test(f))
+    const files = readdirSync(DATA_DIR).filter((f) => /\.m3u8?$/i.test(f) && !/^SomoyTV\./i.test(f))
     const list = files.map((f) => {
       const code = f.replace(/\.m3u8?$/, '').toLowerCase()
       return { code, file: f }
