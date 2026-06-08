@@ -1,5 +1,4 @@
-const PROXY_BASE = 'http://localhost:3001/api/proxy/stream?url='
-
 export function getProxyUrl(url: string): string {
-  return `${PROXY_BASE}${encodeURIComponent(url)}`
+  const base = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+  return `${base}/api/proxy/stream?url=${encodeURIComponent(url)}`
 }
