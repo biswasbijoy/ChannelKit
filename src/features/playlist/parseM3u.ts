@@ -1,18 +1,29 @@
 import type { Channel, ParseResult } from './playlistTypes'
 import bdChannelCategories from '../../data/bdChannelCategories.json'
+import inChannelCategories from '../../data/inChannelCategories.json'
 
 interface ChannelCategoryData {
   byName: Record<string, string>
   byTvgId: Record<string, string>
 }
 
-const categoryData = bdChannelCategories as ChannelCategoryData
-const categoriesByNormalizedName = new Map(
-  Object.entries(categoryData.byName).map(([name, category]) => [
-    normalizeChannelName(name),
-    category,
-  ]),
-)
+interface CategoryDataset {
+  byTvgId: Record<string, string>
+  byNormalizedName: Map<string, string>
+}
+
+const bdCategoryData = createCategoryDataset(bdChannelCategories as ChannelCategoryData)
+const inCategoryData = createCategoryDataset(inChannelCategories as ChannelCategoryData)
+const combinedCategoryData = createCategoryDataset({
+  byName: {
+    ...(inChannelCategories as ChannelCategoryData).byName,
+    ...(bdChannelCategories as ChannelCategoryData).byName,
+  },
+  byTvgId: {
+    ...(inChannelCategories as ChannelCategoryData).byTvgId,
+    ...(bdChannelCategories as ChannelCategoryData).byTvgId,
+  },
+})
 
 export function parseM3u(content: string, fileName?: string): ParseResult {
   const channels: Channel[] = []
@@ -79,7 +90,7 @@ function parseChannel(
   const tvgName = extractAttribute(extinf, 'tvg-name') || ''
   const logo = extractAttribute(extinf, 'tvg-logo') || ''
   const explicitGroup = extractAttribute(extinf, 'group-title')
-  const inferredGroup = inferChannelCategory(name, tvgId, tvgName)
+  const inferredGroup = inferChannelCategory(name, tvgId, tvgName, fileName)
   const group = explicitGroup && explicitGroup.toLowerCase() !== 'uncategorized'
     ? explicitGroup
     : inferredGroup ?? 'Uncategorized'
@@ -122,30 +133,68 @@ export function inferChannelCategory(
   name: string,
   tvgId: string,
   tvgName: string,
+  fileName?: string | null,
 ): string | undefined {
+  const categoryData = getCategoryDatasetForFileName(fileName)
+
   if (tvgId && categoryData.byTvgId[tvgId]) {
     return categoryData.byTvgId[tvgId]
   }
 
-  const nameCategory = categoriesByNormalizedName.get(normalizeChannelName(name))
+  const nameCategory = categoryData.byNormalizedName.get(normalizeChannelName(name))
   if (nameCategory) return nameCategory
 
   if (tvgName) {
-    return categoriesByNormalizedName.get(normalizeChannelName(tvgName))
+    return categoryData.byNormalizedName.get(normalizeChannelName(tvgName))
   }
 
   return undefined
 }
 
-export function applyBdCategoryMapping(channels: Channel[], fileName?: string | null): Channel[] {
-  if (!fileName?.toLowerCase().startsWith('bd')) return channels
+export function applyCategoryMapping(channels: Channel[], fileName?: string | null): Channel[] {
+  if (!hasCategoryMappingForFileName(fileName)) return channels
   return channels.map((ch) => {
-    const inferred = inferChannelCategory(ch.name, ch.tvgId, ch.tvgName)
+    const inferred = inferChannelCategory(ch.name, ch.tvgId, ch.tvgName, fileName)
     if (inferred && (!ch.group || ch.group.toLowerCase() === 'uncategorized')) {
       return { ...ch, group: inferred }
     }
     return ch
   })
+}
+
+export function applyBdCategoryMapping(channels: Channel[], fileName?: string | null): Channel[] {
+  return applyCategoryMapping(channels, fileName)
+}
+
+function createCategoryDataset(data: ChannelCategoryData): CategoryDataset {
+  return {
+    byTvgId: data.byTvgId,
+    byNormalizedName: new Map(
+      Object.entries(data.byName).map(([name, category]) => [
+        normalizeChannelName(name),
+        category,
+      ]),
+    ),
+  }
+}
+
+function getCategoryDatasetForFileName(fileName?: string | null): CategoryDataset {
+  const countryCode = getCategoryCountryCode(fileName)
+  if (countryCode === 'bd') return bdCategoryData
+  if (countryCode === 'in') return inCategoryData
+  return combinedCategoryData
+}
+
+function hasCategoryMappingForFileName(fileName?: string | null): boolean {
+  return getCategoryCountryCode(fileName) !== undefined
+}
+
+function getCategoryCountryCode(fileName?: string | null): 'bd' | 'in' | undefined {
+  const normalized = fileName?.trim().toLowerCase()
+  if (!normalized) return undefined
+  if (normalized.startsWith('bd')) return 'bd'
+  if (normalized.startsWith('in') || normalized.startsWith('india')) return 'in'
+  return undefined
 }
 
 function normalizeChannelName(name: string): string {

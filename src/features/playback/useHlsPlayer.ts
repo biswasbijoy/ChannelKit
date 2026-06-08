@@ -142,7 +142,7 @@ export function useHlsPlayer(
     } else if (Hls.isSupported()) {
       setMode('hlsjs')
       const hls = new Hls({
-        enableWorker: true,
+        enableWorker: false,
         lowLatencyMode: false,
         maxBufferLength: 30,
         maxMaxBufferLength: 60,

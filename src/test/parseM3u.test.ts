@@ -51,6 +51,29 @@ http://example.com/atn-music.m3u8`
     expect(result.channels[0]?.group).toBe('Bangladesh')
   })
 
+  it('uses the IN channel category map when parsing in.m3u channels', () => {
+    const content = `#EXTM3U
+#EXTINF:-1 tvg-id="SonyEntertainmentTelevision.in@HD",Sony Entertainment Television HD (1080p)
+http://example.com/sony-entertainment.m3u8
+#EXTINF:-1 tvg-id="AajTak.in@HD",Aaj Tak HD (1080p)
+http://example.com/aaj-tak.m3u8`
+
+    const result = parseM3u(content, 'in.m3u')
+    expect(result.channels).toHaveLength(2)
+    expect(result.channels[0]?.group).toBe('Entertainment')
+    expect(result.channels[1]?.group).toBe('News')
+  })
+
+  it('keeps playlist group-title over inferred IN channel categories', () => {
+    const content = `#EXTM3U
+#EXTINF:-1 tvg-id="SonyEntertainmentTelevision.in@HD" group-title="India",Sony Entertainment Television HD (1080p)
+http://example.com/sony-entertainment.m3u8`
+
+    const result = parseM3u(content, 'in.m3u')
+    expect(result.channels).toHaveLength(1)
+    expect(result.channels[0]?.group).toBe('India')
+  })
+
   it('returns error for missing EXTM3U header', () => {
     const content = `#EXTINF:-1,Channel
 http://example.com/stream.m3u8`
