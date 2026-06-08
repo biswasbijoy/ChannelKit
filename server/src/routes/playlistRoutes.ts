@@ -27,7 +27,7 @@ router.post('/playlist/fetch', rateLimit(), validateProxyUrl, async (req, res) =
 
 router.get('/playlists/defaults', authenticate, async (_req, res) => {
   try {
-    const files = readdirSync(DATA_DIR).filter((f) => /^[a-zA-Z]{2}\.m3u8?$/.test(f))
+    const files = readdirSync(DATA_DIR).filter((f) => /\.m3u8?$/i.test(f))
     const list = files.map((f) => {
       const code = f.replace(/\.m3u8?$/, '').toLowerCase()
       return { code, file: f }
@@ -41,8 +41,8 @@ router.get('/playlists/defaults', authenticate, async (_req, res) => {
 
 router.get('/playlists/default/:code', authenticate, async (req, res) => {
   const code = (req.params.code as string)?.toLowerCase()
-  if (!code || !/^[a-z]{2}$/.test(code)) {
-    res.status(400).json({ error: 'Invalid country code' })
+  if (!code || !/^[a-z]{2,}$/.test(code)) {
+    res.status(400).json({ error: 'Invalid playlist code' })
     return
   }
   try {

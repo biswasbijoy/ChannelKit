@@ -92,11 +92,17 @@ export function AppShell({ children }: AppShellProps) {
                 >
                   {displayCountry ? (
                     <>
-                      <img
-                        src={getFlagImageUrl(displayCountry.code)}
-                        alt={displayCountry.name}
-                        className="w-5 h-3.5 rounded object-cover"
-                      />
+                      {displayCountry.code === 'others' ? (
+                        <svg className="w-5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      ) : (
+                        <img
+                          src={getFlagImageUrl(displayCountry.code)}
+                          alt={displayCountry.name}
+                          className="w-5 h-3.5 rounded object-cover"
+                        />
+                      )}
                       <span>{displayCountry.name}</span>
                     </>
                   ) : (
@@ -109,8 +115,9 @@ export function AppShell({ children }: AppShellProps) {
                 {countryOpen && (
                   <div className="absolute right-0 top-full mt-1 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 py-1 max-h-72 overflow-y-auto">
                     {availableDefaults.map((entry) => {
-                      const name = getCountryName(entry.code) ?? entry.code.toUpperCase()
+                      const name = entry.code === 'others' ? 'Other Channels' : (getCountryName(entry.code) ?? entry.code.toUpperCase())
                       const isActive = fileName?.startsWith(entry.code)
+                      const isOthers = entry.code === 'others'
                       return (
                         <button
                           key={entry.code}
@@ -123,7 +130,13 @@ export function AppShell({ children }: AppShellProps) {
                             isActive ? 'bg-blue-900/30 text-blue-300' : 'text-gray-200'
                           }`}
                         >
-                          <img src={getFlagImageUrl(entry.code)} alt={name} className="w-5 h-3.5 rounded object-cover" />
+                          {isOthers ? (
+                            <svg className="w-5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          ) : (
+                            <img src={getFlagImageUrl(entry.code)} alt={name} className="w-5 h-3.5 rounded object-cover" />
+                          )}
                           <span>{name}</span>
                           {isActive && <span className="ml-auto text-blue-400 text-xs">Active</span>}
                         </button>

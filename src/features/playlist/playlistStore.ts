@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { api } from '../api/client'
-import { parseM3u, applyBdCategoryMapping } from './parseM3u'
+import { parseM3u, applyCategoryMapping } from './parseM3u'
 import type { Channel, ParseResult, PlaylistRecord } from './playlistTypes'
 
 interface DefaultEntry {
@@ -43,7 +43,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
   availableDefaults: [],
 
   setPlaylist: (result, fileName) => {
-    const mapped = applyBdCategoryMapping(result.channels, fileName)
+    const mapped = applyCategoryMapping(result.channels, fileName)
     set({
       channels: mapped,
       parseResult: result,
@@ -96,7 +96,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
   },
 
   loadRecord: (record) => {
-    const mapped = applyBdCategoryMapping(record.channels, record.fileName)
+    const mapped = applyCategoryMapping(record.channels, record.fileName)
     set({
       channels: mapped,
       fileName: record.fileName ?? null,
@@ -139,7 +139,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
         const data = recentRes.data
         const rawChannels: Channel[] = data.channels ?? []
         const filtered = rawChannels.filter((ch) => !ch.name.includes('(1080p)'))
-        const mapped = applyBdCategoryMapping(filtered, data.fileName)
+        const mapped = applyCategoryMapping(filtered, data.fileName)
         set({
           channels: mapped,
           fileName: data.fileName ?? null,

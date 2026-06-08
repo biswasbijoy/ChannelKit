@@ -255,7 +255,10 @@ export function getCountryName(code: string): string | undefined {
 }
 
 export function getCountryCodeFromFilename(filename: string): string | undefined {
-  return filename.match(/^([a-zA-Z]{2})\.m3u8?$/)?.[1]?.toUpperCase()
+  const match = filename.match(/^([a-zA-Z]{2})\.m3u8?$/)?.[1]?.toUpperCase()
+  if (match) return match
+  if (/^others\.m3u8?$/i.test(filename)) return 'OTHERS'
+  return undefined
 }
 
 export function getCountryNameFromFilename(filename: string): string {
@@ -267,6 +270,7 @@ export function getCountryNameFromFilename(filename: string): string {
 export function getCountryFlagAndName(filename: string): { code: string; name: string } | null {
   const code = getCountryCodeFromFilename(filename)
   if (!code) return null
+  if (code === 'OTHERS') return { code: 'others', name: 'Other Channels' }
   const name = getCountryName(code)
   if (!name) return null
   return { code, name }
