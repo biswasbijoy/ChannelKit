@@ -5,7 +5,7 @@ import { proxyStream } from '../services/streamProxyService.js'
 
 const router = Router()
 
-// Rate limit: 30 requests per minute per IP
-router.post('/proxy/stream', rateLimit(), validateProxyUrl, proxyStream)
+router.get('/proxy/stream', rateLimit(60_000, 120), proxyStream)
+router.post('/proxy/stream', rateLimit(60_000, 30), validateProxyUrl, proxyStream)
 
 export default router

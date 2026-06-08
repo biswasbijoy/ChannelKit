@@ -101,6 +101,10 @@ export function useHlsPlayer(
     mediaSourceRef.current = streamUrl
     retriesRef.current = 0
 
+    const streamOrigin = (() => {
+      try { return new URL(streamUrl).origin } catch { return streamUrl }
+    })()
+
     const updateState = (s: PlaybackState) => {
       setState(s)
       onStateChange?.(s)
@@ -142,6 +146,9 @@ export function useHlsPlayer(
         lowLatencyMode: false,
         maxBufferLength: 30,
         maxMaxBufferLength: 60,
+        xhrSetup: (xhr) => {
+          xhr.setRequestHeader('Referer', streamOrigin + '/')
+        },
       })
       hlsRef.current = hls
 
