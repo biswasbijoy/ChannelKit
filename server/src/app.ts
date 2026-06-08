@@ -20,6 +20,10 @@ app.use('/api', playlistRoutes)
 app.use('/api', authRoutes)
 app.use('/api', settingsRoutes)
 app.use('/api', publicRoutes)
+app.use(cors({
+  origin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:5173'],
+  credentials: true,
+}))
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() })
