@@ -50,6 +50,12 @@ export function StreamingScreen() {
     }
   }, [controls, volume, muted, currentChannel])
 
+  useEffect(() => {
+    if (!isLoading && channels.length > 0 && channelId && !currentChannel) {
+      navigate('/channels', { replace: true })
+    }
+  }, [isLoading, channels, channelId, currentChannel, navigate])
+
   const goToChannel = useCallback((id: string) => {
     navigate(`/watch/${id}`)
   }, [navigate])
