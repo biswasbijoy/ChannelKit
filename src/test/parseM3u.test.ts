@@ -31,6 +31,26 @@ http://example.com/bbc.m3u8`
     expect(ch.group).toBe('UK')
   })
 
+  it('uses the BD channel category map when group-title is missing', () => {
+    const content = `#EXTM3U
+#EXTINF:-1 tvg-id="ATNMusic.bd@SD",ATN Music (360p)
+http://example.com/atn-music.m3u8`
+
+    const result = parseM3u(content)
+    expect(result.channels).toHaveLength(1)
+    expect(result.channels[0]?.group).toBe('Music')
+  })
+
+  it('keeps playlist group-title over inferred BD channel categories', () => {
+    const content = `#EXTM3U
+#EXTINF:-1 tvg-id="ATNMusic.bd@SD" group-title="Bangladesh",ATN Music (360p)
+http://example.com/atn-music.m3u8`
+
+    const result = parseM3u(content)
+    expect(result.channels).toHaveLength(1)
+    expect(result.channels[0]?.group).toBe('Bangladesh')
+  })
+
   it('returns error for missing EXTM3U header', () => {
     const content = `#EXTINF:-1,Channel
 http://example.com/stream.m3u8`

@@ -21,7 +21,7 @@ export const useDemoStore = create<DemoState>((set) => ({
       const { data } = await api.get('/public/demo')
       const result = parseM3u(data.content, data.fileName)
       if (result.channels.length > 0) {
-        const ch = result.channels[0]
+        const ch = result.channels[0]!
         ch.id = 'demo'
         set({ channel: ch, isLoading: false })
       } else {

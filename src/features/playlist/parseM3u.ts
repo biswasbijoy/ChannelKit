@@ -1,4 +1,18 @@
 import type { Channel, ParseResult } from './playlistTypes'
+import bdChannelCategories from '../../data/bdChannelCategories.json'
+
+interface ChannelCategoryData {
+  byName: Record<string, string>
+  byTvgId: Record<string, string>
+}
+
+const categoryData = bdChannelCategories as ChannelCategoryData
+const categoriesByNormalizedName = new Map(
+  Object.entries(categoryData.byName).map(([name, category]) => [
+    normalizeChannelName(name),
+    category,
+  ]),
+)
 
 export function parseM3u(content: string, fileName?: string): ParseResult {
   const channels: Channel[] = []
@@ -64,7 +78,11 @@ function parseChannel(
   const tvgId = extractAttribute(extinf, 'tvg-id') || ''
   const tvgName = extractAttribute(extinf, 'tvg-name') || ''
   const logo = extractAttribute(extinf, 'tvg-logo') || ''
-  const group = extractAttribute(extinf, 'group-title') || 'Uncategorized'
+  const explicitGroup = extractAttribute(extinf, 'group-title')
+  const inferredGroup = inferChannelCategory(name, tvgId, tvgName)
+  const group = explicitGroup && explicitGroup.toLowerCase() !== 'uncategorized'
+    ? explicitGroup
+    : inferredGroup ?? 'Uncategorized'
 
   return {
     id: `ch-${index}-${urlToId(url)}`,
@@ -98,4 +116,42 @@ function extractAttribute(extinf: string | null, attr: string): string | undefin
   const regex = new RegExp(`${attr}="([^"]*)"`, 'i')
   const match = extinf.match(regex)
   return match?.[1] ?? undefined
+}
+
+export function inferChannelCategory(
+  name: string,
+  tvgId: string,
+  tvgName: string,
+): string | undefined {
+  if (tvgId && categoryData.byTvgId[tvgId]) {
+    return categoryData.byTvgId[tvgId]
+  }
+
+  const nameCategory = categoriesByNormalizedName.get(normalizeChannelName(name))
+  if (nameCategory) return nameCategory
+
+  if (tvgName) {
+    return categoriesByNormalizedName.get(normalizeChannelName(tvgName))
+  }
+
+  return undefined
+}
+
+export function applyBdCategoryMapping(channels: Channel[], fileName?: string | null): Channel[] {
+  if (!fileName?.toLowerCase().startsWith('bd')) return channels
+  return channels.map((ch) => {
+    const inferred = inferChannelCategory(ch.name, ch.tvgId, ch.tvgName)
+    if (inferred && (!ch.group || ch.group.toLowerCase() === 'uncategorized')) {
+      return { ...ch, group: inferred }
+    }
+    return ch
+  })
+}
+
+function normalizeChannelName(name: string): string {
+  return name
+    .replace(/\s*\([^)]*\)\s*$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
 }

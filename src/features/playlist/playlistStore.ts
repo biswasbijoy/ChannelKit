@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { api } from '../api/client'
-import { parseM3u } from './parseM3u'
+import { parseM3u, applyBdCategoryMapping } from './parseM3u'
 import type { Channel, ParseResult, PlaylistRecord } from './playlistTypes'
 
 interface DefaultEntry {
@@ -43,8 +43,9 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
   availableDefaults: [],
 
   setPlaylist: (result, fileName) => {
+    const mapped = applyBdCategoryMapping(result.channels, fileName)
     set({
-      channels: result.channels,
+      channels: mapped,
       parseResult: result,
       fileName,
       error: result.errors.length > 0
@@ -95,8 +96,9 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
   },
 
   loadRecord: (record) => {
+    const mapped = applyBdCategoryMapping(record.channels, record.fileName)
     set({
-      channels: record.channels,
+      channels: mapped,
       fileName: record.fileName ?? null,
       error: null,
       isLoading: false,
@@ -135,8 +137,11 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
         if (!first) return
         const recentRes = await api.get(`/playlists/${first._id}`)
         const data = recentRes.data
+        const rawChannels: Channel[] = data.channels ?? []
+        const filtered = rawChannels.filter((ch) => !ch.name.includes('(1080p)'))
+        const mapped = applyBdCategoryMapping(filtered, data.fileName)
         set({
-          channels: data.channels ?? [],
+          channels: mapped,
           fileName: data.fileName ?? null,
           error: null,
           isLoading: false,
@@ -173,6 +178,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
         isLoading: false,
         hasLoaded: true,
       })
+      get().saveToServer()
     } catch (err) {
       console.error(`Failed to load default playlist "${code}":`, err)
       set({ error: `Failed to load playlist for "${code}"`, isLoading: false, hasLoaded: true })

@@ -54,8 +54,6 @@ export function AppShell({ children }: AppShellProps) {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup'
   const displayCountry = fileName ? getCountryFlagAndName(fileName) : null
 
-  const demoChannel = useDemoStore((s) => s.channel)
-
   const navLinks = [
     { to: '/', label: 'Home', show: true },
     { to: '/channels', label: 'Channels', show: !!user && hasPlaylist },
