@@ -96,7 +96,7 @@ export async function proxyStream(req: Request, res: Response) {
       const body = await response.text()
       const rewritten = rewriteM3u8(body, parsedUrl)
       res.setHeader('Content-Length', Buffer.byteLength(rewritten, 'utf-8').toString())
-      res.status(response.status === 206 ? 206 : 200)
+      res.status(200)
       res.send(rewritten)
       return
     }

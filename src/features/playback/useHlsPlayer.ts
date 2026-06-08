@@ -19,6 +19,11 @@ function classifyError(
     return { category: 'forbidden', message: 'Access forbidden (403)' }
   }
 
+  if (hlsError instanceof MediaError) {
+    const codes = ['', 'MEDIA_ERR_ABORTED', 'MEDIA_ERR_NETWORK', 'MEDIA_ERR_DECODE', 'MEDIA_ERR_SRC_NOT_SUPPORTED']
+    return { category: 'media', message: codes[hlsError.code] || 'Unknown media error' }
+  }
+
   if (hlsError && 'details' in hlsError) {
     if (hlsError.details?.includes('network')) {
       return { category: 'network', message: 'Network error loading stream' }
@@ -29,6 +34,10 @@ function classifyError(
     if (hlsError.details?.includes('404')) {
       return { category: 'not-found', message: 'Stream not found' }
     }
+
+    const type = 'type' in hlsError ? hlsError.type : 'unknown'
+    const details = 'details' in hlsError ? hlsError.details : ''
+    return { category: type, message: details || 'An unknown playback error occurred' }
   }
 
   return { category: 'unknown', message: 'An unknown playback error occurred' }
@@ -165,6 +174,10 @@ export function useHlsPlayer(
           const err = classifyError(data, data.response?.code)
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
+              if (data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR && data.response?.code === 404) {
+                hls.startLoad()
+                return
+              }
               if (retriesRef.current < retryCount) {
                 retriesRef.current++
                 hls.startLoad()
