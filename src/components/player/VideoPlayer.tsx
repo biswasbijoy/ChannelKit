@@ -26,6 +26,9 @@ export function StreamingScreen() {
   const [search, setSearch] = useState('')
   const [pipSupported, setPipSupported] = useState(false)
 
+  const demoLoading = useDemoStore((s) => s.isLoading)
+  const demoError = useDemoStore((s) => s.error)
+
   const currentChannel = channelId
     ? channelId === 'demo' ? demoChannel : getChannelById(channelId)
     : undefined
@@ -124,6 +127,38 @@ export function StreamingScreen() {
   }
 
   if (channels.length === 0) {
+    if (!user && demoLoading && channelId === 'demo') {
+      return (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-400 text-sm">Loading demo channel...</p>
+          </div>
+        </div>
+      )
+    }
+
+    if (!user && demoError && channelId === 'demo') {
+      return (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            </div>
+            <p className="text-gray-400 text-lg mb-2">Demo unavailable</p>
+            <p className="text-gray-500 text-sm mb-6 max-w-sm">
+              {demoError}. Please check that the backend server is running.
+            </p>
+            <Link to="/" className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors">
+              Go Home
+            </Link>
+          </div>
+        </div>
+      )
+    }
+
     if (!user && demoChannel && channelId === 'demo') {
       // fall through to player with demo channel
     } else {
