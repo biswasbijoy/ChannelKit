@@ -8,33 +8,33 @@ const BLOCKED_IPS = new Set([
   'localhost',
 ])
 
-const PRIVATE_RANGES = [
-  { prefix: '10.', prefixLen: 3 },
-  { prefix: '172.16.', prefixLen: 7 },
-  { prefix: '172.17.', prefixLen: 7 },
-  { prefix: '172.18.', prefixLen: 7 },
-  { prefix: '172.19.', prefixLen: 7 },
-  { prefix: '172.20.', prefixLen: 7 },
-  { prefix: '172.21.', prefixLen: 7 },
-  { prefix: '172.22.', prefixLen: 7 },
-  { prefix: '172.23.', prefixLen: 7 },
-  { prefix: '172.24.', prefixLen: 7 },
-  { prefix: '172.25.', prefixLen: 7 },
-  { prefix: '172.26.', prefixLen: 7 },
-  { prefix: '172.27.', prefixLen: 7 },
-  { prefix: '172.28.', prefixLen: 7 },
-  { prefix: '172.29.', prefixLen: 7 },
-  { prefix: '172.30.', prefixLen: 7 },
-  { prefix: '172.31.', prefixLen: 7 },
-  { prefix: '192.168.', prefixLen: 8 },
+const PRIVATE_PREFIXES = [
+  '10.',
+  '172.16.',
+  '172.17.',
+  '172.18.',
+  '172.19.',
+  '172.20.',
+  '172.21.',
+  '172.22.',
+  '172.23.',
+  '172.24.',
+  '172.25.',
+  '172.26.',
+  '172.27.',
+  '172.28.',
+  '172.29.',
+  '172.30.',
+  '172.31.',
+  '192.168.',
+  // Link-local, including cloud instance metadata endpoints (169.254.169.254 etc.)
+  '169.254.',
 ]
 
 function isPrivateIp(hostname: string): boolean {
   if (BLOCKED_IPS.has(hostname)) return true
   if (net.isIPv6(hostname)) return true
-  return PRIVATE_RANGES.some((range) =>
-    hostname.startsWith(range.prefix),
-  )
+  return PRIVATE_PREFIXES.some((prefix) => hostname.startsWith(prefix))
 }
 
 export function validateProxyUrl(
@@ -42,10 +42,10 @@ export function validateProxyUrl(
   res: Response,
   next: NextFunction,
 ) {
-  const { url } = req.body
+  const url = req.method === 'GET' ? req.query.url : req.body?.url
 
   if (!url || typeof url !== 'string') {
-    res.status(400).json({ error: 'Missing or invalid "url" in request body' })
+    res.status(400).json({ error: 'Missing or invalid "url" parameter' })
     return
   }
 

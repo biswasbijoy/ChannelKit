@@ -19,7 +19,7 @@ describe('favoritesStore', () => {
   })
 
   it('loads favorites from array', () => {
-    useFavoritesStore.getState().loadFavorites(['ch-1', 'ch-2'])
+    useFavoritesStore.getState().setFavorites(['ch-1', 'ch-2'])
     expect(useFavoritesStore.getState().isFavorite('ch-1')).toBe(true)
     expect(useFavoritesStore.getState().isFavorite('ch-2')).toBe(true)
     expect(useFavoritesStore.getState().isFavorite('ch-3')).toBe(false)

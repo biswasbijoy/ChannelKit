@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { usePlaylistStore } from '../../features/playlist/playlistStore'
 import { useAuthStore } from '../../features/auth/authStore'
 import { useDemoStore } from '../../features/demo/demoStore'
+import { useFavoritesStore } from '../../features/favorites/favoritesStore'
 import { getCountryFlagAndName, getFlagImageUrl, getCountryName } from '../../features/countries/iso3166'
 
 interface AppShellProps {
@@ -25,9 +26,12 @@ export function AppShell({ children }: AppShellProps) {
   const countryRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
+  const initFavorites = useFavoritesStore((s) => s.initialize)
+
   useEffect(() => {
     checkAuth()
-  }, [checkAuth])
+    initFavorites()
+  }, [checkAuth, initFavorites])
 
   const loadDemo = useDemoStore((s) => s.loadDemo)
   const clearPlaylist = usePlaylistStore((s) => s.clearPlaylist)
@@ -68,6 +72,7 @@ export function AppShell({ children }: AppShellProps) {
   const navLinks = [
     { to: '/', label: 'Home', show: true },
     { to: '/channels', label: 'Channels', show: !!user && hasPlaylist },
+    { to: '/guide', label: 'TV Guide', show: !!user },
     { to: '/settings', label: 'Settings', show: !!user },
   ]
 

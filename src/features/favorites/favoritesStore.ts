@@ -1,11 +1,13 @@
 import { create } from 'zustand'
+import { saveFavorites, loadFavorites as loadFromDb } from '../storage/indexedDb'
 
 interface FavoritesState {
   favorites: Set<string>
   toggleFavorite: (id: string) => void
   isFavorite: (id: string) => boolean
-  loadFavorites: (ids: string[]) => void
+  setFavorites: (ids: string[]) => void
   getFavorites: () => string[]
+  initialize: () => Promise<void>
 }
 
 export const useFavoritesStore = create<FavoritesState>((set, get) => ({
@@ -19,6 +21,7 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
       } else {
         next.add(id)
       }
+      saveFavorites(Array.from(next))
       return { favorites: next }
     })
   },
@@ -27,11 +30,17 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
     return get().favorites.has(id)
   },
 
-  loadFavorites: (ids) => {
+  setFavorites: (ids) => {
     set({ favorites: new Set(ids) })
+    saveFavorites(ids)
   },
 
   getFavorites: () => {
     return Array.from(get().favorites)
+  },
+
+  initialize: async () => {
+    const ids = await loadFromDb()
+    set({ favorites: new Set(ids) })
   },
 }))

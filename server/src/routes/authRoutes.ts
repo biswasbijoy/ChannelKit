@@ -3,16 +3,18 @@ import jwt from 'jsonwebtoken'
 import { User } from '../models/User.js'
 import { Settings } from '../models/Settings.js'
 import { authenticate } from '../middleware/auth.js'
+import { rateLimit } from '../middleware/rateLimit.js'
+import { JWT_SECRET } from '../config/jwtSecret.js'
 
 const router = Router()
-const JWT_SECRET = process.env.JWT_SECRET ?? 'fallback-secret-do-not-use-in-prod'
 const TOKEN_EXPIRY = '7d'
+const authRateLimit = rateLimit(60_000, 10)
 
 function userResponse(user: any) {
   return { id: user._id.toString(), email: user.email, name: user.name, avatar: user.avatar ?? null }
 }
 
-router.post('/auth/register', async (req, res) => {
+router.post('/auth/register', authRateLimit, async (req, res) => {
   const { email, password, name } = req.body
 
   if (!email || !password || !name) {
@@ -44,7 +46,7 @@ router.post('/auth/register', async (req, res) => {
   }
 })
 
-router.post('/auth/login', async (req, res) => {
+router.post('/auth/login', authRateLimit, async (req, res) => {
   const { email, password } = req.body
 
   if (!email || !password) {
