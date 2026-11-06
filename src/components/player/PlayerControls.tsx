@@ -14,6 +14,7 @@ interface PlayerControlsProps {
   hasNext: boolean
   pipSupported: boolean
   onPlayPause?: () => void
+  onRetry?: () => void
 }
 
 export function PlayerControlsBar({
@@ -30,6 +31,7 @@ export function PlayerControlsBar({
   hasNext,
   pipSupported,
   onPlayPause,
+  onRetry,
 }: PlayerControlsProps) {
   const isPlayable = state === 'playing' || state === 'paused'
 
@@ -107,6 +109,23 @@ export function PlayerControlsBar({
       >
         ⛶
       </button>
+      {state === 'error' || state === 'idle' || state === 'loading' ? (
+        <button
+          onClick={onRetry}
+          className="p-1.5 hover:bg-gray-700 rounded transition-colors text-sm"
+          title="Retry/Refresh stream"
+        >
+          ↻
+        </button>
+      ) : (
+        <button
+          onClick={onRetry}
+          className="p-1.5 hover:bg-gray-700 rounded transition-colors text-sm"
+          title="Manual stream refresh"
+        >
+          ↻
+        </button>
+      )}
     </div>
   )
 }

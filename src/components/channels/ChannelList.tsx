@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { usePlaylistStore } from '../../features/playlist/playlistStore'
 import { useDemoStore } from '../../features/demo/demoStore'
 import { useFavoritesStore } from '../../features/favorites/favoritesStore'
@@ -8,6 +9,7 @@ import { getCountryFlagAndName, getFlagImageUrl } from '../../features/countries
 import { ChannelCard } from './ChannelRow'
 import { ChannelSearch } from './ChannelSearch'
 import { ChannelFilters } from './ChannelFilters'
+import { useDebounce } from '../../hooks/useDebounce'
 
 export function ChannelBrowser() {
   const channels = usePlaylistStore((s) => s.channels)
@@ -19,6 +21,7 @@ export function ChannelBrowser() {
   const favoritesSet = useFavoritesStore((s) => s.favorites)
 
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 300)
   const [selectedGroup, setSelectedGroup] = useState('')
   const [sortBy, setSortBy] = useState<'original' | 'alpha' | 'group'>('original')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
@@ -27,8 +30,8 @@ export function ChannelBrowser() {
     let list = channels
     if (showFavoritesOnly) list = list.filter((c) => favoritesSet.has(c.id))
     if (selectedGroup) list = list.filter((c) => c.group === selectedGroup)
-    if (search.trim()) {
-      const q = search.toLowerCase().trim()
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase().trim()
       list = list.filter(
         (c) =>
           c.name.toLowerCase().includes(q) ||
@@ -46,7 +49,31 @@ export function ChannelBrowser() {
         break
     }
     return sorted
-  }, [channels, search, selectedGroup, sortBy, showFavoritesOnly, favoritesSet])
+  }, [channels, debouncedSearch, selectedGroup, sortBy, showFavoritesOnly, favoritesSet])
+
+  const [columns, setColumns] = useState(1)
+  const parentRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth
+      if (w >= 1536) setColumns(4)
+      else if (w >= 1280) setColumns(3)
+      else if (w >= 640) setColumns(2)
+      else setColumns(1)
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  const rowCount = Math.ceil(filteredChannels.length / columns)
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 100, // height of ChannelCard + gap
+    overscan: 5,
+  })
 
   const isGuest = !user
   const displayChannels = isGuest
@@ -108,8 +135,8 @@ export function ChannelBrowser() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full">
-      <div className="sticky top-0 z-10 bg-gray-950/90 backdrop-blur-sm border-b border-gray-800/60">
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="shrink-0 bg-gray-950/90 backdrop-blur-sm border-b border-gray-800/60">
         <div className="px-5 pt-4 pb-3 space-y-3">
           <div className="flex items-center gap-4">
             {displayCountry ? (
@@ -142,7 +169,7 @@ export function ChannelBrowser() {
         </div>
       </div>
 
-      <div className="flex-1 px-5 py-4">
+      <div ref={parentRef} className="flex-1 px-5 py-4 overflow-y-auto">
         {!user && demoChannel && (
           <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-blue-950/40 via-gray-900/40 to-purple-950/40 border border-blue-500/10">
             <div className="flex items-center justify-between mb-3">
@@ -154,11 +181,34 @@ export function ChannelBrowser() {
             <ChannelCard channel={demoChannel} />
           </div>
         )}
+
         {user && filteredChannels.length > 0 ? (
-          <div className="grid gap-2.5 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {filteredChannels.map((ch) => (
-              <ChannelCard key={ch.id} channel={ch} />
-            ))}
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const startIndex = virtualRow.index * columns
+              const rowChannels = filteredChannels.slice(startIndex, startIndex + columns)
+
+              return (
+                <div
+                  key={virtualRow.key}
+                  className="absolute top-0 left-0 w-full grid gap-2.5 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                  style={{
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  {rowChannels.map((ch) => (
+                    <ChannelCard key={ch.id} channel={ch} />
+                  ))}
+                </div>
+              )
+            })}
           </div>
         ) : user && filteredChannels.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">

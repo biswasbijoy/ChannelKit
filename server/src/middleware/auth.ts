@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET ?? 'fallback-secret-do-not-use-in-prod'
+import { JWT_SECRET } from '../config/jwtSecret.js'
 
 export interface AuthPayload {
   userId: string
